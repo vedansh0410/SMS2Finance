@@ -13,6 +13,7 @@ import com.vedansh.smssync.R;
 import com.vedansh.smssync.model.SmsModel;
 import com.vedansh.smssync.service.SmsReaderService;
 import com.vedansh.smssync.service.SmsUploadService;
+import com.vedansh.smssync.storage.SyncPreference;
 import com.vedansh.smssync.util.PermissionUtil;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Button btnPermission;
     private Button btnReadSms;
+    private Button btnSyncAll30Days;
 
     private SmsReaderService smsReaderService;
 
@@ -39,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
 
         btnPermission = findViewById(R.id.btnPermission);
         btnReadSms = findViewById(R.id.btnReadSms);
+        btnSyncAll30Days = findViewById(R.id.btnSyncAll30Days);
 
         // Initialize SMS reader
         smsReaderService = new SmsReaderService();
@@ -67,37 +70,60 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Read SMS button
+        // Read SMS button (Incremental sync for past 30 days)
         btnReadSms.setOnClickListener(v -> {
-
-            // Check permission
-            if (!PermissionUtil.hasSmsPermission(this)) {
-
-                Toast.makeText(
-                        this,
-                        "Please grant SMS permission first.",
-                        Toast.LENGTH_SHORT
-                ).show();
-
-                return;
-            }
-
-            // Read SMS
-            List<SmsModel> smsList =
-                    smsReaderService.readInbox(this);
-
-            // Show number of new bank transaction SMS
-            txtResult.setText(
-                    "SMS Count : " + smsList.size()
-            );
-
-            // Upload SMS sequentially
-            SmsUploadService uploadService =
-                    new SmsUploadService(this);
-
-            uploadService.uploadSmsList(smsList);
-
+            syncSms(false);
         });
+
+        // Force Re-Scan All Past 30 Days (Resets checkpoint to ensure all past 30 days are read)
+        btnSyncAll30Days.setOnClickListener(v -> {
+            SyncPreference.resetLastSync(this);
+            syncSms(true);
+        });
+    }
+
+    private void syncSms(boolean forceAllThirtyDays) {
+        // Check permission
+        if (!PermissionUtil.hasSmsPermission(this)) {
+
+            Toast.makeText(
+                    this,
+                    "Please grant SMS permission first.",
+                    Toast.LENGTH_SHORT
+            ).show();
+
+            return;
+        }
+
+        // Read SMS
+        List<SmsModel> smsList =
+                smsReaderService.readInbox(this, forceAllThirtyDays);
+
+        // Show number of bank transaction SMS found
+        txtResult.setText(
+                "SMS Count : " + smsList.size()
+        );
+
+        if (smsList.isEmpty()) {
+            Toast.makeText(
+                    this,
+                    "0 new SMS found. Tap 'Force Re-Scan' to check entire 30-day inbox.",
+                    Toast.LENGTH_LONG
+            ).show();
+            return;
+        }
+
+        Toast.makeText(
+                this,
+                "Found " + smsList.size() + " bank transaction SMS. Uploading...",
+                Toast.LENGTH_SHORT
+        ).show();
+
+        // Upload SMS sequentially
+        SmsUploadService uploadService =
+                new SmsUploadService(this);
+
+        uploadService.uploadSmsList(smsList);
     }
 
     /**

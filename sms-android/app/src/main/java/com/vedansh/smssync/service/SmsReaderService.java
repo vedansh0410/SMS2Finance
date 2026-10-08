@@ -17,12 +17,16 @@ import java.util.List;
 public class SmsReaderService {
 
     public List<SmsModel> readInbox(Context context) {
+        return readInbox(context, false);
+    }
+
+    public List<SmsModel> readInbox(Context context, boolean ignoreLastSync) {
 
         List<SmsModel> smsList =
                 new ArrayList<>();
 
         long lastSync =
-                SyncPreference.getLastSync(context);
+                ignoreLastSync ? 0 : SyncPreference.getLastSync(context);
 
         Log.d(
                 "SMS_SYNC",
@@ -31,7 +35,7 @@ public class SmsReaderService {
 
         Log.d(
                 "SMS_SYNC",
-                "LAST SYNC = " + lastSync
+                "LAST SYNC CHECKPOINT = " + lastSync + " (ignoreLastSync=" + ignoreLastSync + ")"
         );
 
         String[] projection = {
@@ -60,7 +64,7 @@ public class SmsReaderService {
         }
 
         int totalRead = 0;
-        int olderThanTenDays = 0;
+        int olderThanThirtyDays = 0;
         int alreadySynced = 0;
         int nonBankSms = 0;
         int bankSms = 0;
@@ -97,26 +101,26 @@ public class SmsReaderService {
 
                 /*
                  * Only process SMS from
-                 * the last 10 days.
+                 * the last 30 days.
                  */
-                if (!DateUtil.isWithinLastTenDays(
+                if (!DateUtil.isWithinLastThirtyDays(
                         timestamp)) {
 
-                    olderThanTenDays++;
+                    olderThanThirtyDays++;
                     continue;
                 }
 
                 /*
-                 * Ignore SMS already synchronized.
+                 * Ignore SMS already synchronized if incremental sync.
                  */
-                if (timestamp <= lastSync) {
+                if (!ignoreLastSync && timestamp <= lastSync) {
 
                     alreadySynced++;
                     continue;
                 }
 
                 /*
-                 * Ignore non-bank SMS.
+                 * Ignore non-bank SMS (Algorithm 1 Filter).
                  */
                 if (!BankSmsFilter.isBankTransaction(
                         sender,
@@ -167,8 +171,8 @@ public class SmsReaderService {
 
         Log.d(
                 "SMS_SYNC",
-                "OLDER THAN 10 DAYS   = "
-                        + olderThanTenDays
+                "OLDER THAN 30 DAYS   = "
+                        + olderThanThirtyDays
         );
 
         Log.d(

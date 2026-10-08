@@ -25,5 +25,31 @@ public class SmsEntity {
 
     private Long timestamp;
 
+    @Builder.Default
+    private String processingStatus = "PENDING"; // PENDING, PARSED, SKIPPED, FAILED
+
+    @Column(columnDefinition = "TEXT")
+    private String processingError;
+
     private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    public void prePersist() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        if (updatedAt == null) {
+            updatedAt = LocalDateTime.now();
+        }
+        if (processingStatus == null) {
+            processingStatus = "PENDING";
+        }
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }
