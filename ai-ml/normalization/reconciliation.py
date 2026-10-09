@@ -1,5 +1,6 @@
 from typing import List, Dict, Any, Optional
 import datetime
+from normalization.cleaner import clean_merchant_name
 
 
 class EntityReconciler:
@@ -45,10 +46,24 @@ class EntityReconciler:
         contextual_types = ["MERCHANT", "TXN_TYPE"]
         for entity_type in contextual_types:
             chosen = None
-            if entity_type in ner_map and ner_map[entity_type].get("confidence", 0) >= self.theta_ner:
-                chosen = ner_map[entity_type]
-            elif entity_type in reg_map:
-                chosen = reg_map[entity_type]
+            if entity_type == "MERCHANT":
+                ner_cand = ner_map.get(entity_type)
+                reg_cand = reg_map.get(entity_type)
+                if ner_cand and ner_cand.get("confidence", 0) >= self.theta_ner:
+                    clean_v = clean_merchant_name(ner_cand.get("value"))
+                    if clean_v:
+                        chosen = dict(ner_cand)
+                        chosen["value"] = clean_v
+                if not chosen and reg_cand:
+                    clean_v = clean_merchant_name(reg_cand.get("value"))
+                    if clean_v:
+                        chosen = dict(reg_cand)
+                        chosen["value"] = clean_v
+            else:
+                if entity_type in ner_map and ner_map[entity_type].get("confidence", 0) >= self.theta_ner:
+                    chosen = ner_map[entity_type]
+                elif entity_type in reg_map:
+                    chosen = reg_map[entity_type]
 
             if chosen:
                 e_final[entity_type] = chosen["value"]
@@ -124,10 +139,8 @@ class EntityReconciler:
 
         # Merchant normalization
         merchant = e_final.get("MERCHANT")
-        if merchant:
-            result["merchant"] = str(merchant).strip().title()
-        else:
-            result["merchant"] = None
+        cleaned_merchant = clean_merchant_name(merchant) if merchant else None
+        result["merchant"] = cleaned_merchant
 
         # UPI ID normalization
         result["upi_id"] = e_final.get("UPI_ID")

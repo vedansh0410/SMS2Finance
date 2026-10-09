@@ -2,6 +2,9 @@ import re
 from typing import List, Dict, Any, Optional
 
 
+from normalization.cleaner import clean_merchant_name
+
+
 class FinancialNerEngine:
     """
     Named Entity Recognition (NER) Token-Classification Engine.
@@ -22,25 +25,26 @@ class FinancialNerEngine:
         # 1. Contextual Merchant Token Recognition
         # Pattern captures variable multi-word merchant titles following directional prepositions
         merchant_contexts = [
-            r'(?:to|at|info|paid\s+to|transfer\s+to|vpa\s+to)\s+([A-Za-z0-9&.\'_\-\s]{2,30}?)(?:\s+(?:on|via|ref|upi|avl|bal|using|through|\.|$))',
-            r'(?:purchase\s+at)\s+([A-Za-z0-9&.\'_\-\s]{2,30}?)(?:\s+(?:on|via|\.|$))',
-            r'(?:by\s+merchant)\s+([A-Za-z0-9&.\'_\-\s]{2,30}?)(?:\s+(?:on|via|\.|$))'
+            r'(?:to|at|info|paid\s+to|transfer\s+to|vpa\s+to)\s+([A-Za-z0-9&.\'_\-\s]{2,40}?)(?=(?:[\.\s]+(?:on|via|ref|rrn|utr|upi|avl|bal|using|through|not\s*you|$)|[\.\s]*$))',
+            r'(?:purchase\s+at)\s+([A-Za-z0-9&.\'_\-\s]{2,40}?)(?=(?:[\.\s]+(?:on|via|ref|rrn|utr|avl|bal|$)|[\.\s]*$))',
+            r'(?:by\s+merchant)\s+([A-Za-z0-9&.\'_\-\s]{2,40}?)(?=(?:[\.\s]+(?:on|via|ref|rrn|utr|avl|bal|$)|[\.\s]*$))'
         ]
 
         for pattern in merchant_contexts:
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
-                val = match.group(1).strip()
-                # Exclude false-positive noise tokens
-                low = val.lower()
-                if low not in {"your", "vpa", "account", "a/c", "card", "bank", "otp", "code", "rs", "inr"}:
+                raw_val = match.group(1).strip()
+                val = clean_merchant_name(raw_val)
+                if val:
+                    start_idx = match.start(1)
+                    end_idx = start_idx + len(val)
                     entities.append({
                         "entity_type": "MERCHANT",
                         "value": val,
                         "source": "NER",
                         "confidence": 0.88,
-                        "start_idx": match.start(1),
-                        "end_idx": match.end(1)
+                        "start_idx": start_idx,
+                        "end_idx": end_idx
                     })
                     break
 

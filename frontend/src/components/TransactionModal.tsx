@@ -1,6 +1,7 @@
 import React from 'react';
 import { Transaction } from '../types';
 import { X, CheckCircle2, Cpu, Sparkles, Building2, CreditCard } from 'lucide-react';
+import { cleanMerchantName } from '../utils/merchant';
 
 interface TransactionModalProps {
   transaction: Transaction | null;
@@ -56,7 +57,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ transaction,
           <div>
             <div className="flex items-center space-x-2">
               <h2 className="text-xl font-bold text-white tracking-tight">
-                {transaction.merchant || 'Financial Transaction'}
+                {cleanMerchantName(transaction.merchant)}
               </h2>
               <span
                 className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${

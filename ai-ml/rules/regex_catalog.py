@@ -87,7 +87,8 @@ BALANCE_PATTERNS: List[Pattern] = [
 
 # Merchant capture via standard phrasing (e.g. to SWIGGY, at AMAZON, credited by NAME)
 MERCHANT_RULE_PATTERNS: List[Pattern] = [
-    re.compile(r'(?:to|at|towards|for)\s+([A-Za-z0-9\s&.\'-]{2,35}?)(?:\s+(?:on|ref|rrn|via|upi|avl|bal|using|through|\.|$))', re.IGNORECASE),
-    re.compile(r'(?:credited(?:\s+with[^\.]*?)?\s+by)\s+([A-Za-z0-9\s&.\'-]{2,35}?)(?:\s+(?:on|ref|rrn|avl|bal|\.|$))', re.IGNORECASE),
-    re.compile(r'(?:vpa|merchant)\s*[:\-]\s*([A-Za-z0-9\s&.\'-]{2,35}?)(?:\s+(?:on|ref|rrn|via|\.|$))', re.IGNORECASE),
+    re.compile(r'(?:to|at|towards|for)\s+([A-Za-z0-9\s&.\'-]{2,40}?)(?=(?:[\.\s]+(?:on|ref|rrn|utr|via|upi|avl|bal|using|through|not\s*you|$)|[\.\s]*$))', re.IGNORECASE),
+    re.compile(r'(?:credited.*?\s+by|received\s+from)\s+([A-Za-z0-9\s&.\'-]{2,40}?)(?=(?:[\.\s]+(?:on|ref|rrn|utr|avl|bal|avail|available|balance|not\s*you|$)|[\.\s]*$))', re.IGNORECASE),
+    re.compile(r'(?:vpa|merchant)\s*[:\-]\s*([A-Za-z0-9\s&.\'-]{2,40}?)(?=(?:[\.\s]+(?:on|ref|rrn|utr|via|$)|[\.\s]*$))', re.IGNORECASE),
 ]
+

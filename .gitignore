@@ -1,0 +1,20 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Pytest
+.pytest_cache/
+
+# Maven
+target/
+*.class
+
+# Frontend build cache
+.vite/
+dist/
+
+# OS metadata
+.DS_Store
+Thumbs.db

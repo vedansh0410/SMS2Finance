@@ -13,6 +13,9 @@ from rules.regex_catalog import (
 )
 
 
+from normalization.cleaner import clean_merchant_name
+
+
 class DeterministicRuleExtractor:
     """
     Deterministic regex and rule-based extractor for structural financial entities.
@@ -144,18 +147,17 @@ class DeterministicRuleExtractor:
             m = pat.search(message)
             if m:
                 raw_merchant = m.group(1).strip()
-                # Clean off trailing .RRN, .Ref, .Avl, or delimiter noise
-                raw_merchant = re.sub(r'[\.\s]*(?:rrn|utr|ref|avl|bal|not you|sms block).*$', '', raw_merchant, flags=re.IGNORECASE).strip()
-                raw_merchant = raw_merchant.rstrip(".-/ ")
-                # Ignore noise words
-                if len(raw_merchant) > 2 and raw_merchant.lower() not in {"vpa", "account", "a/c", "card", "bank", "your", "an"}:
+                clean_m = clean_merchant_name(raw_merchant)
+                if clean_m:
+                    start_idx = m.start(1)
+                    end_idx = start_idx + len(clean_m)
                     candidates.append({
                         "entity_type": "MERCHANT",
-                        "value": raw_merchant,
+                        "value": clean_m,
                         "source": "RULE",
                         "confidence": 0.75,
-                        "start_idx": m.start(1),
-                        "end_idx": m.end(1)
+                        "start_idx": start_idx,
+                        "end_idx": end_idx
                     })
                     break
 

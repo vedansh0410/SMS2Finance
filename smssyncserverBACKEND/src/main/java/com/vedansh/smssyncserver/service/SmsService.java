@@ -86,7 +86,7 @@ public class SmsService {
                     transaction.setTransactionType(res.getTransactionType() != null ? res.getTransactionType() : "UNKNOWN");
                     transaction.setBankBalance(res.getBankBalance());
                     transaction.setBankName(res.getBankName());
-                    transaction.setMerchant(res.getMerchant());
+                    transaction.setMerchant(TransactionService.sanitizeMerchant(res.getMerchant()));
                     transaction.setUpiId(res.getUpiId());
                     transaction.setRawSmsId(sms.getId());
                     transaction.setExtractionConfidence(res.getExtractionConfidence());

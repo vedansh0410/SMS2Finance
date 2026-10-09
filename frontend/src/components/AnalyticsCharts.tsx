@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import { SpendingTrend, BankStat, MerchantStat } from '../types';
 import { TrendingUp, PieChart as PieIcon, ShoppingBag } from 'lucide-react';
+import { cleanMerchantName } from '../utils/merchant';
 
 interface AnalyticsChartsProps {
   trends: SpendingTrend[];
@@ -160,7 +161,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ trends, banks,
           {merchants.slice(0, 4).map((m, idx) => (
             <div key={m.merchant} className="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800/80 hover:border-slate-700 transition">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-200 truncate">{m.merchant}</span>
+                <span className="text-xs font-semibold text-slate-200 truncate">{cleanMerchantName(m.merchant, 'Unknown')}</span>
                 <span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400">
                   #{idx + 1}
                 </span>

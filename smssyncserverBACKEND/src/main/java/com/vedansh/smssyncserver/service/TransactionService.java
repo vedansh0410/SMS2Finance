@@ -238,8 +238,8 @@ public class TransactionService {
         Map<String, Double> sumMap = new HashMap<>();
 
         for (TransactionEntity t : list) {
-            if (t.getMerchant() == null || t.getMerchant().isBlank()) continue;
-            String m = t.getMerchant();
+            String m = sanitizeMerchant(t.getMerchant());
+            if (m == null || m.isBlank()) continue;
             countMap.put(m, countMap.getOrDefault(m, 0L) + 1);
             sumMap.put(m, sumMap.getOrDefault(m, 0.0) + (t.getAmount() != null ? t.getAmount() : 0.0));
         }
@@ -287,6 +287,17 @@ public class TransactionService {
         return listResult;
     }
 
+    public static String sanitizeMerchant(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        String cleaned = raw.replaceAll("(?i)[\\.\\s]+(?:rrn|utr|ref|reference|upi\\s*ref|crn|urn)[\\s\\:\\.\\#\\-]*(?:[0-9a-zA-Z]+)?(?:[\\.\\s]+(?:avl|bal|avail|available).*)?$", "");
+        cleaned = cleaned.replaceAll("(?i)[\\.\\s]+(?:avl|bal|avail|available|balance)[\\s\\:\\.\\#\\-].*$", "");
+        cleaned = cleaned.replaceAll("(?i)[\\.\\s]+(?:avl|bal)$", "");
+        cleaned = cleaned.replaceAll("(?i)[\\.\\s]+(?:not\\s*you|sms\\s*block|to\\s*block|block).*$", "");
+        cleaned = cleaned.replaceAll("(?i)[\\.\\s]+\\d{6,}$", "");
+        cleaned = cleaned.replaceAll("[\\.\\-\\/:,;#\\s]+$", "").trim();
+        return cleaned.isBlank() ? null : cleaned;
+    }
+
     private TransactionResponse mapToResponse(TransactionEntity t) {
         return TransactionResponse.builder()
                 .id(t.getId())
@@ -297,7 +308,7 @@ public class TransactionService {
                 .transactionType(t.getTransactionType())
                 .bankBalance(t.getBankBalance())
                 .bankName(t.getBankName())
-                .merchant(t.getMerchant())
+                .merchant(sanitizeMerchant(t.getMerchant()))
                 .upiId(t.getUpiId())
                 .rawSmsId(t.getRawSmsId())
                 .extractionConfidence(t.getExtractionConfidence())

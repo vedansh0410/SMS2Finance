@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Transaction, AccountSummary } from '../types';
 import { Search, Filter, ArrowDownRight, ArrowUpRight, ChevronRight, Building2, CreditCard } from 'lucide-react';
+import { cleanMerchantName } from '../utils/merchant';
 
 interface TransactionTableProps {
   transactions: Transaction[];
@@ -186,7 +187,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                       >
                         {isDebit ? <ArrowDownRight className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
                       </div>
-                      <span className="truncate max-w-[150px]">{txn.merchant || 'General Transaction'}</span>
+                      <span className="truncate max-w-[150px]">{cleanMerchantName(txn.merchant, 'General Transaction')}</span>
                     </td>
 
                     {/* Type Badge */}

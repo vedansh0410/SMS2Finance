@@ -142,3 +142,27 @@ def test_edge_filter_l1_retains_valid_transaction():
     sender = "SBIINB"
     txn_msg = "Rs 1,200.00 debited from A/c XX1234 on 05-Oct-24 to Swiggy. Avl Bal: Rs 4,500.00."
     assert edge_filter_l1(sender, txn_msg) is True
+
+
+def test_merchant_cleaning_with_rrn_suffix():
+    ner = FinancialNerEngine()
+    reconciler = EntityReconciler(theta_ner=0.75)
+    rule_ext = DeterministicRuleExtractor()
+
+    test_cases = [
+        ("Sent Rs.20.00 from A/c *1541 on 05-10-26 to RAM BABU.RRN 627807039010.Avl Bal Rs.3556.82.Not you?SMS BLOCK to 9289592895-Indian Bank", "Ram Babu"),
+        ("Sent Rs.20.00 from A/c *1541 on 23-09-26 to Maxfry.RRN 626624446639.Avl Bal Rs.4133.12.Not you?SMS BLOCK to 9289592895-Indian Bank", "Maxfry"),
+        ("Sent Rs.47.00 from A/c *1541 on 22-09-26 to AJAY CAFE.RRN 663119670082.Avl Bal Rs.4263.12.Not you?SMS BLOCK to 9289592895-Indian Bank", "Ajay Cafe"),
+        ("Sent Rs.60.00 from A/c *1541 on 14-09-26 to FARMAN.RRN 662399294901.Avl Bal Rs.2033.12.Not you?SMS BLOCK to 9289592895-Indian Bank", "Farman"),
+        ("Sent Rs.215.00 from A/c *1541 on 12-09-26 to ZOMATO.RRN 314525473853.Avl Bal Rs.2093.12.Not you?SMS BLOCK to 9289592895-Indian Bank", "Zomato"),
+    ]
+
+    for msg, expected_merchant in test_cases:
+        e_reg = rule_ext.extract("VM-INDBNK-S", msg)
+        e_ner = ner.predict_entities(msg)
+        reconciled = reconciler.reconcile(e_reg, e_ner)
+        assert reconciled["merchant"] == expected_merchant
+        # Ensure RRN or Avl was NOT included in the merchant
+        assert "rrn" not in reconciled["merchant"].lower()
+        assert "avl" not in reconciled["merchant"].lower()
+

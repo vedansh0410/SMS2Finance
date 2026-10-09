@@ -1,4 +1,5 @@
 import { Transaction, FinancialSummary, AccountSummary, SpendingTrend, MerchantStat, BankStat, RawSms } from '../types';
+import { cleanMerchantName } from '../utils/merchant';
 
 const API_BASE_URL = 'http://localhost:8080/api';
 
@@ -221,7 +222,12 @@ export async function fetchTransactions(bank?: string, type?: string, search?: s
     const res = await fetch(`${API_BASE_URL}/transactions?${params.toString()}`);
     if (!res.ok) throw new Error('Network response not ok');
     const data = await res.json();
-    return data && data.length > 0 ? data : MOCK_TRANSACTIONS;
+    return data && data.length > 0
+      ? data.map((t: Transaction) => ({
+          ...t,
+          merchant: cleanMerchantName(t.merchant, '')
+        }))
+      : MOCK_TRANSACTIONS;
   } catch {
     return MOCK_TRANSACTIONS.filter(t => {
       if (account && account !== 'ALL' && t.accountLastFour !== account) return false;
@@ -279,7 +285,12 @@ export async function fetchTopMerchants(account?: string): Promise<MerchantStat[
     const res = await fetch(`${API_BASE_URL}/analytics/merchants${query}`);
     if (!res.ok) throw new Error('Network response not ok');
     const data = await res.json();
-    return data && data.length > 0 ? data : MOCK_MERCHANTS;
+    return data && data.length > 0
+      ? data.map((m: MerchantStat) => ({
+          ...m,
+          merchant: cleanMerchantName(m.merchant, 'General Merchant')
+        }))
+      : MOCK_MERCHANTS;
   } catch {
     return MOCK_MERCHANTS;
   }
